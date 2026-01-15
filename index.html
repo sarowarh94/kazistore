@@ -38,6 +38,337 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
+    
+import React, { useState, useEffect, useMemo } from 'react';
+import { Contact, ContactType, TabType } from './types';
+import Navigation from './components/Navigation';
+import HomeView from './components/HomeView';
+import ListView from './components/ListView';
+import SettingsView from './components/SettingsView';
+import ContactForm from './components/ContactForm';
+
+// Helper for unique ID generation - Using a more robust method
+const generateId = () => Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+
+// User's provided data integrated as default
+const INITIAL_DATA: Contact[] = [
+  ...[
+    { name: "কবির খন্দকার", number: "010110533396" },
+    { name: "মনির হোসেন", number: "010111161497" },
+    { name: "আবু বক্কর", number: "010110542112" },
+    { name: "রোকেয়া বেগম(জিহাদ)", number: "010110542104" },
+    { name: "ফেরদৌস বেগম", number: "010110550965" },
+    { name: "আসাদ মিয়া", number: "010110556910" },
+    { name: "আবু কালাম(পানির পাম্প)", number: "010110570701" },
+    { name: "আবু কালাম(ঘর)", number: "010311102052" },
+    { name: "মধ্যপাড়া জামে মসজিদ", number: "01211154670" },
+    { name: "ইব্রাহিম মিয়া", number: "010110574023" },
+    { name: "জীবন মিয়া(জেসমিন)", number: "010110555047" },
+    { name: "সানু মামা(ছিদ্দিক মিয়া)", number: "010110515160" },
+    { name: "রেনু আরা বেগম(মরিয়ম)", number: "010110565325" },
+    { name: "আরমান গাজী(কুড়ের পাড়)", number: "010110511684" },
+    { name: "আব্দুল কাদির(কাজল)", number: "010110524645" },
+    { name: "আছমা বেগম", number: "010110521331" },
+    { name: "আলাউদ্দিন খন্দকার ", number: "010110556566" },
+    { name: "আমেনা বেগম", number: "010110578161" },
+    { name: "হোসনা বেগম", number: "010110522427" },
+    { name: "মানিক মিয়া", number: "010110554937" },
+    { name: "হান্নান মিয়া(লাকি)", number: "010910055340" },
+    { name: "শফিকুল ইসলাম(রিমা)", number: "010110555311" },
+    { name: "কামাল(জসিম বাসা)", number: "010110521460" },
+    { name: "কামাল মিটার-এক", number: "010810001702" },
+    { name: "কামাল মিটার-দুই", number: "010110572669" },
+    { name: "সাইদুর রহমান", number: "0103110728450" },
+    { name: "বিল্লাল(আলম)", number: "010110524394" },
+    { name: "মাসুদ(শিল্পি)", number: "010110522500" },
+    { name: "শাহাবুদ্দিন মোল্লা 202", number: "010110554202" },
+    { name: "শাহাবুদ্দিন 023", number: "010110511023" },
+    { name: "শাহাবুদ্দিন 037", number: "010110519037" },
+    { name: "শাহাবুদ্দিন 064", number: "010910047064" },
+    { name: "আলাল উদ্দিন ", number: "010110521294" },
+    { name: "আশিক (হোটেল)", number: "010110521413" },
+    { name: "মিন্টু মিয়া(মনির হোসেন)", number: "011010047171" },
+    { name: "আক্তার মিয়া(কামাল)", number: "010110510876" },
+    { name: "হুমাযূন মিয়া(বাবু মিয়া)", number: "010110524850" },
+    { name: "রফিকুল ইসলাম", number: "010110550679" },
+    { name: "গিয়াসউদ্দিন ", number: "010110571440" },
+    { name: "আঃ কাদির(ফজলু মিয়া)", number: "010110572720" },
+    { name: "লাভলী ইয়াসমিন(খোকন)", number: "010110555173" },
+    { name: "এলাই মোল্লা(মাহাবুর)", number: "010111162554" },
+    { name: "আমিরুল হুক(আজহারুল)", number: "010110550969" },
+    { name: "আবু কালাম(রাব্বি)", number: "010311101865" },
+    { name: "ঝাড়ু মিয়া", number: "010110554934" },
+    { name: "সাদির মিয়া(ইলিয়াস)", number: "010110518943" },
+    { name: "আক্তার মিয়া(জুনি)", number: "010110521456" },
+    { name: "হাজী আঃ লতিফ", number: "010110514836" },
+    { name: "আজাদ(আরভিন)", number: "010110515155" },
+    { name: "আবু কালাম(Carnival)", number: "652342" },
+    { name: "জাহাঙ্গীর আলম", number: "010110538586" },
+    { name: "ওমর ফারুক(মারুফ)", number: "010111162068" },
+    { name: "নাজমা আন্টি নতুন বাড়ি", number: "012010018573" },
+    { name: "নাজমা আন্টি(লোকমান) পুরান বাড়ি", number: "010110557866" },
+    { name: "চান মিয়া(রাজু মিয়া)", number: "010110555259" },
+    { name: "আবুল খায়ের(898)", number: "010110577898" },
+    { name: "নুর মুহাম্মদ(জালাল)", number: "011210017985" },
+    { name: "শাহাবুদ্দিন(678)মুনিরুজ্জামান ", number: "010110522678" },
+    { name: "জিল্লুর রহমান(ভৈরব)", number: "010110556495" },
+    { name: "ফারুক(Carnival)", number: "691949" },
+    { name: "মিলন সরদার", number: "010510000858" },
+    { name: "আলাউদ্দিন ", number: "01719372672" },
+    { name: "রওশন আলী(নাদিরা)", number: "010110515236" },
+    { name: "জালাল মোল্লা", number: "010110574612" },
+    { name: "জামাই মিটার", number: "010110355907" },
+    { name: "আব্দুল মুতালিব", number: "010110325682" },
+    { name: "ফজলুর রহমান(Carnival)", number: "595005" },
+    { name: "আশিক হোটেল(Carnival)", number: "538467" },
+    { name: "তালয়-এক (সাইদুর রহমান)", number: "010410027521" },
+    { name: "শেফালী ৩কিলো(3L)", number: "010110572726" },
+    { name: "শেফালী ২ কিলো 3R", number: "010110572727" },
+    { name: "কালা মিয়া( হাসান)", number: "010110569428" },
+    { name: "মুসলিম মিয়া (মারুফ)", number: "010110529489" },
+    { name: "শাহেদ খানা", number: "010311059820" },
+    { name: "জামাল মিয়া(সুমি)", number: "010810000624" },
+    { name: "আলী আকবর(মার্শাল)", number: "010211395051" },
+    { name: "মতি মিয়া(মুক্তা)", number: "010110555053" },
+    { name: "আরজিনা(সালাম)", number: "010110556501" },
+    { name: "মুসলিম মিয়া(ফুরকান)", number: "011210037710" },
+    { name: "জহির মিয়া", number: "011110070948" },
+    { name: "সাহিদ মিয়া", number: "010110517722" },
+    { name: "দুধ মিয়া", number: "010110517705" },
+    { name: "চায়না বেগম", number: "010110517828" },
+    { name: "খোকন (রাফি)", number: "010230044756" },
+    { name: "খোকন (হাবিব)", number: "010230044900" },
+    { name: "রুবেল মিয়া (রিহান)", number: "011010053390" },
+    { name: "মাহফুজ মিয়া (আবুল হাসেম)", number: "010110570688" },
+    { name: "আমিনুল হক (শফিকুল) বাড়ি", number: "010110513417" },
+    { name: "জিহাদ (স্টেশন) আলাউদ্দিন", number: "011010053391" },
+    { name: "অহিদ মিয়া গ্যাস বিল", number: "1090NM-119819/ 01754118467" },
+    { name: "সাদেক মিয়া গ্যাস বিল", number: "1090NM-101004/ 01817582685" },
+    { name: "তালয় দুই(আরমান)", number: "011110053971" },
+    { name: "আমিনুল হক (মাসুমা বেগম) দোকান", number: "010311072666" },
+    { name: "আতিকুল ইসলাম", number: "010111160405" },
+    { name: "সাইমা ইসলাম (বি-বাড়িয়া নেট)", number: "301103" },
+    { name: "মুসা মিয়া (লিমা)", number: "010110556895" },
+    { name: "শফিকুল ইসলাম (রাসেল)", number: "010111054007" }
+  ].map(c => ({ ...c, id: generateId(), createdAt: Date.now(), type: 'meter' as ContactType })),
+  ...[
+    { name: "আংগুরি কিস্তি", number: "01743225513" },
+    { name: "শাহাবুদ্দিন মোল্লা", number: "01811739147" },
+    { name: "ডাক্তার(নগদ)", number: "01888476816" },
+    { name: "সামীউল(বিকাশ)", number: "01924987999" },
+    { name: "এড. মার্শাল", number: "01301960087" },
+    { name: "মাহিন", number: "01338505460" },
+    { name: "রাজু ভাই", number: "01822580063" },
+    { name: "সরুজ মিয়া", number: "01823768288" },
+    { name: "কাজী জামান", number: "01571352110" },
+    { name: "রাজা", number: "01866098681" },
+    { name: "ইমন", number: "01404149514" },
+    { name: "খলিল", number: "01319986968" },
+    { name: "নাজমা বাংলালিংক ", number: "01988129418" },
+    { name: "নাজমা গ্রামীণফোন", number: "01716274118" },
+    { name: "আবু কালাম বাংলালিংক ", number: "0194474593" },
+    { name: "আবুল কালাম গ্রামীণফোন", number: "01726687782" },
+    { name: "তানজিনা রিচার্জ", number: "01935086932" },
+    { name: "সোনিয়া কিস্তি", number: "01768197709" },
+    { name: "তারেক", number: "01779065118" },
+    { name: "বিজয় বিকাশ ", number: "01647808624" }
+  ].map(c => ({ ...c, id: generateId(), createdAt: Date.now(), type: 'mobile' as ContactType }))
+];
+
+const App: React.FC = () => {
+  const [contacts, setContacts] = useState<Contact[]>(() => {
+    const saved = localStorage.getItem('kazi_contacts');
+    return saved ? JSON.parse(saved) : INITIAL_DATA;
+  });
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('kazi_theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  const [activeTab, setActiveTab] = useState<TabType>('home');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  
+  // Toast state
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('kazi_contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
+  useEffect(() => {
+    localStorage.setItem('kazi_theme', theme);
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const showToastMessage = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  const handleSaveContact = (contactData: Omit<Contact, 'id' | 'createdAt'>) => {
+    if (editingContact) {
+      setContacts(prev => prev.map(c => 
+        c.id === editingContact.id ? { ...c, ...contactData } : c
+      ));
+      setEditingContact(null);
+      showToastMessage('Contact Updated!');
+    } else {
+      const newContact: Contact = {
+        ...contactData,
+        id: generateId(),
+        createdAt: Date.now(),
+      };
+      setContacts(prev => [newContact, ...prev]);
+      showToastMessage('Contact Saved!');
+    }
+    setShowForm(false);
+  };
+
+  const confirmDelete = () => {
+    if (deletingId) {
+      const idToDelete = deletingId;
+      setContacts(prev => prev.filter(c => c.id !== idToDelete));
+      setDeletingId(null);
+      showToastMessage('Contact Deleted');
+    }
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact);
+    setShowForm(true);
+  };
+
+  const handleImport = (imported: Contact[]) => {
+    const contactsWithIds = imported.map(c => ({
+        ...c,
+        id: c.id || generateId(),
+        createdAt: c.createdAt || Date.now()
+    }));
+    setContacts(contactsWithIds);
+    showToastMessage('Data Imported!');
+  };
+
+  const filteredContacts = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    let list = contacts;
+    if (activeTab === 'meter') list = contacts.filter(c => c.type === 'meter');
+    if (activeTab === 'mobile') list = contacts.filter(c => c.type === 'mobile');
+    return list.filter(c => 
+      c.name.toLowerCase().includes(query) || 
+      c.number.toLowerCase().includes(query)
+    );
+  }, [contacts, searchQuery, activeTab]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
+  return (
+    <div className="min-h-screen flex flex-col max-w-md mx-auto bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-xl overflow-hidden relative transition-colors duration-300">
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-blue-600 dark:bg-blue-500 text-white px-6 py-2 rounded-full shadow-lg flex items-center space-x-2">
+            <i className="fa-solid fa-check-circle"></i>
+            <span className="text-sm font-semibold">{toast}</span>
+          </div>
+        </div>
+      )}
+
+      <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6">
+        {activeTab === 'home' && (
+          <HomeView 
+            contacts={filteredContacts} 
+            onEdit={handleEditContact}
+            onDelete={setDeletingId}
+            onCopySuccess={() => showToastMessage('Copied to Clipboard!')}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+        )}
+        {(activeTab === 'meter' || activeTab === 'mobile') && (
+          <ListView 
+            type={activeTab as ContactType}
+            contacts={filteredContacts}
+            onEdit={handleEditContact}
+            onDelete={setDeletingId}
+            onCopySuccess={() => showToastMessage('Copied to Clipboard!')}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+        )}
+        {activeTab === 'settings' && (
+          <SettingsView 
+            theme={theme}
+            toggleTheme={toggleTheme}
+            contacts={contacts}
+            onImport={handleImport}
+          />
+        )}
+      </main>
+
+      {activeTab !== 'settings' && (
+        <button 
+          onClick={() => { setEditingContact(null); setShowForm(true); }}
+          className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95 z-40"
+        >
+          <i className="fa-solid fa-plus text-xl"></i>
+        </button>
+      )}
+
+      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* Delete Confirmation Modal */}
+      {deletingId && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-xs rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="fa-solid fa-trash-can text-lg"></i>
+            </div>
+            <h3 className="text-lg font-bold text-center mb-2">Delete Contact?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">
+              This action will permanently remove this data from your storage.
+            </p>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setDeletingId(null)}
+                className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold rounded-xl active:scale-95 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="flex-1 py-3 bg-red-600 text-white font-semibold rounded-xl active:scale-95 transition-all"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showForm && (
+        <ContactForm 
+          onClose={() => setShowForm(false)} 
+          onSave={handleSaveContact}
+          initialData={editingContact || undefined}
+        />
+      )}
+    </div>
+  );
+};
+
+export default App;
+
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
